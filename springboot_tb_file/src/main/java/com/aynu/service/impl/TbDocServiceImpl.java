@@ -32,9 +32,12 @@ public class TbDocServiceImpl extends ServiceImpl<TbDocDao, TbDoc> implements Tb
         int idx = 0;
         //基于BFS的思想，查询当前内容的子内容，加到队列，依次进行查询
         while(idx < tbDocList.size()){
-            int pid = tbDocList.get(idx).getId();
-            final List<TbDoc> kidList = tbDocDao.selectByPid(pid);
-            if(kidList != null) tbDocList.addAll(kidList);
+            TbDoc tbDoc = tbDocList.get(idx);
+            //文件夹继续查询，文件无子目录不查询
+            if(tbDoc.getType() == 0){
+                List<TbDoc> kidList = tbDocDao.selectByPid(tbDoc.getId());
+                if(kidList != null) tbDocList.addAll(kidList);
+            }
             idx ++;
         }
         return tbDocList;
@@ -57,7 +60,10 @@ public class TbDocServiceImpl extends ServiceImpl<TbDocDao, TbDoc> implements Tb
                 tbDoc.setId(null);
                 tbDoc.setPid(parent);
                 tbDocDao.add(tbDoc);
-                dfs(tbDocDao.selectByPid(oldId),tbDoc.getId());
+                //文件夹继续复制；文件无子目录，不进行复制
+                if(tbDoc.getType() == 0){
+                    dfs(tbDocDao.selectByPid(oldId),tbDoc.getId());
+                }
             });
         }
     }
